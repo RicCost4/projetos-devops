@@ -1,0 +1,20 @@
+#===============================================================#
+#======================== MERGE-REQUEST ========================#
+#===============================================================#
+variables:
+  PRIVATE_TOKEN: "PRIVATE-TOKEN:$TOKEN_ACESS"
+
+merge-request-job:
+  stage: merge-request
+  image: ubuntu:latest
+  before_script:
+    - apt-get update && apt-get install -y curl && apt-get install -y jq
+  script:
+    - curl -# --request POST --data "title=Merge_Dev_f&source_branch=desenvolvimento&target_branch=desenvolvimento-f" -H "$PRIVATE_TOKEN" "https://url-repositorio/api/v4/projects/$CI_PROJECT_ID/merge_requests" > /dev/null 2>&1
+    - ID_MERGE=`curl -# --request GET -H "$PRIVATE_TOKEN" "https://url-repositorio/api/v4/projects/$CI_PROJECT_ID/merge_requests?state=opened" | jq '.[] | select(.title == "Merge_Dev_f") | .iid'`
+    - sleep 15
+    - curl -# --request PUT -H "$PRIVATE_TOKEN" "https://url-repositorio/api/v4/projects/$CI_PROJECT_ID/merge_requests/$ID_MERGE/merge" > /dev/null 2>&1
+  only:
+    - desenvolvimento
+  tags:
+    - runner-64-177-docker-m2

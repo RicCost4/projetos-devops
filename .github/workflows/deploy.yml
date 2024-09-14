@@ -1,4 +1,4 @@
-name: Test Deploy
+name: Deploy
 
 on:
   push:
@@ -22,7 +22,7 @@ jobs:
 
       - name: Visualizar Eventos 01
         run: |
-          echo "Nome do repositorio: ${{ github.event.repository.name }} - Branch: ${{ github.ref_name }}-1  -f $CAMINHO_POM_XML_SERVICE"
+          echo "Nome do repositorio: ${{ github.event.repository.name }} - Branch: ${{ github.ref_name }}"
 
       - name: Visualizar o commit
         run: |

@@ -1,0 +1,40 @@
+#===============================================================#
+#======================== BUILD IMAGE ==========================#
+#===============================================================#
+build-and-push-image-docker-job:
+  extends: .only_branch
+  stage: build-and-push-image-docker
+  before_script:
+    ##echo do arquivo .npmrc
+    - NPMRC="NPMRC_${CI_COMMIT_BRANCH}"
+    - GET_REGISTRE="${!NPMRC}"
+    ##URL do Gerais p/sed
+    - if [ $CI_COMMIT_BRANCH == "dev" ]; then URL=$URL_DEV; elif [ $CI_COMMIT_BRANCH == "homologacao" ]; then URL=$URL_HML; elif [ $CI_COMMIT_BRANCH == "producao" ]; then URL=$URL_PROD;fi
+  script:
+    - echo -e $GET_REGISTRE > .npmrc
+    - sed -i "s/&URL/$URL/g" .env.exemplo
+    ## o sed nas envs, tera que ser modificado manualmente ##
+    - if [ $CI_COMMIT_BRANCH == "dev" ]; then cat .env.exemplo; fi
+    - if [ $CI_COMMIT_BRANCH == "dev" ]; then cat build_aplicacao/Dockerfile; fi
+    - docker login -u $DOCKER_REGISTRY_USER -p $DOCKER_REGISTRY_PASSWD $DOCKER_REGISTRY
+    - docker build -t $CI_PROJECT_NAME:$CI_COMMIT_SHORT_SHA-$CI_COMMIT_BRANCH -f ./build_aplicacao/Dockerfile .
+    - docker tag $CI_PROJECT_NAME:$CI_COMMIT_SHORT_SHA-$CI_COMMIT_BRANCH $DOCKER_REGISTRY/$CI_COMMIT_BRANCH/$CI_PROJECT_NAME:$CI_COMMIT_SHORT_SHA-$CI_COMMIT_BRANCH
+    - docker push $DOCKER_REGISTRY/$CI_COMMIT_BRANCH/$CI_PROJECT_NAME:$CI_COMMIT_SHORT_SHA-$CI_COMMIT_BRANCH
+  when: on_success
+
+taggin-new-latest-job:
+  extends: .only_branch
+  needs: [build-and-push-image-docker-job]
+  stage: tagging-new-latest
+  script:
+    - docker tag $CI_PROJECT_NAME:$CI_COMMIT_SHORT_SHA-$CI_COMMIT_BRANCH $DOCKER_REGISTRY/$CI_COMMIT_BRANCH/$CI_PROJECT_NAME:$CI_COMMIT_BRANCH-latest
+    - docker push $DOCKER_REGISTRY/$CI_COMMIT_BRANCH/$CI_PROJECT_NAME:$CI_COMMIT_BRANCH-latest
+
+clearing-docker-images-job:
+  extends: .only_branch
+  needs: [taggin-new-latest-job]
+  stage: clearing-docker-images
+  script:
+    - docker image rm $DOCKER_REGISTRY/$CI_COMMIT_BRANCH/$CI_PROJECT_NAME:$CI_COMMIT_SHORT_SHA-$CI_COMMIT_BRANCH
+    - docker image rm $DOCKER_REGISTRY/$CI_COMMIT_BRANCH/$CI_PROJECT_NAME:$CI_COMMIT_BRANCH-latest
+    - docker image rm $CI_PROJECT_NAME:$CI_COMMIT_SHORT_SHA-$CI_COMMIT_BRANCH

@@ -1,0 +1,56 @@
+#===============================================================#
+#========================== DEPLOY =============================#
+#===============================================================#
+start-application-no1:
+  extends: .only_branch
+  stage: start-application-no1
+  needs: [taggin-new-latest-job]
+  before_script:
+    - HOST="HOST_BACK_${CI_COMMIT_BRANCH}1"
+    - HOST_SSH="${!HOST}"
+  script:
+    - ssh transferencias-dev@$HOST_SSH "rm -rf $CI_PROJECT_NAME && git clone git@url-repositorio/$CI_PROJECT_NAME.git --branch $CI_COMMIT_BRANCH --single-branch && cd ~/$CI_PROJECT_NAME && sed -i \"s/&BRANCH/$CI_COMMIT_BRANCH/g\" build_aplicacao/Dockerfile && sed -i \"s/&PROJECT_NAME/$CI_PROJECT_NAME/g\" build_aplicacao/docker-compose.yaml && sed -i \"s/&BRANCH/$CI_COMMIT_BRANCH/g\" build_aplicacao/docker-compose.yaml && sed -i \"s/&CONTAINER/$CONTAINER/g\" build_aplicacao/docker-compose.yaml && cd ./build_aplicacao && docker login -u $DOCKER_REGISTRY_USER -p $DOCKER_REGISTRY_PASSWD $DOCKER_REGISTRY && docker container rm -f $CONTAINER; docker image rm $DOCKER_REGISTRY/$CI_COMMIT_BRANCH/$CI_PROJECT_NAME:$CI_COMMIT_BRANCH-latest; docker-compose -f docker-compose.yaml up -d"
+
+start-application-no2:
+  extends: .only_branch
+  stage: start-application-no2-4
+  needs: [start-application-no1]
+  before_script:
+    - HOST="HOST_BACK_${CI_COMMIT_BRANCH}2"
+    - HOST_SSH="${!HOST}"
+  script:
+    - ssh transferencias-dev@$HOST_SSH "rm -rf $CI_PROJECT_NAME && git clone git@url-repositorio/$CI_PROJECT_NAME.git --branch $CI_COMMIT_BRANCH --single-branch && cd ~/$CI_PROJECT_NAME && sed -i \"s/&BRANCH/$CI_COMMIT_BRANCH/g\" build_aplicacao/Dockerfile && sed -i \"s/&PROJECT_NAME/$CI_PROJECT_NAME/g\" build_aplicacao/docker-compose.yaml && sed -i \"s/&BRANCH/$CI_COMMIT_BRANCH/g\" build_aplicacao/docker-compose.yaml && sed -i \"s/&CONTAINER/$CONTAINER/g\" build_aplicacao/docker-compose.yaml && cd ./build_aplicacao && docker login -u $DOCKER_REGISTRY_USER -p $DOCKER_REGISTRY_PASSWD $DOCKER_REGISTRY && docker container rm -f $CONTAINER; docker image rm $DOCKER_REGISTRY/$CI_COMMIT_BRANCH/$CI_PROJECT_NAME:$CI_COMMIT_BRANCH-latest; docker-compose -f docker-compose.yaml up -d"
+
+start-application-no3:
+  extends: .only_branch
+  stage: start-application-no2-4
+  needs: [start-application-no1]
+  before_script:
+    - HOST="HOST_BACK_${CI_COMMIT_BRANCH}3"
+    - HOST_SSH="${!HOST}"
+  script:
+    - ssh transferencias-dev@$HOST_SSH "rm -rf $CI_PROJECT_NAME && git clone git@url-repositorio/$CI_PROJECT_NAME.git --branch $CI_COMMIT_BRANCH --single-branch && cd ~/$CI_PROJECT_NAME && sed -i \"s/&BRANCH/$CI_COMMIT_BRANCH/g\" build_aplicacao/Dockerfile && sed -i \"s/&PROJECT_NAME/$CI_PROJECT_NAME/g\" build_aplicacao/docker-compose.yaml && sed -i \"s/&BRANCH/$CI_COMMIT_BRANCH/g\" build_aplicacao/docker-compose.yaml && sed -i \"s/&CONTAINER/$CONTAINER/g\" build_aplicacao/docker-compose.yaml && cd ./build_aplicacao && docker login -u $DOCKER_REGISTRY_USER -p $DOCKER_REGISTRY_PASSWD $DOCKER_REGISTRY && docker container rm -f $CONTAINER; docker image rm $DOCKER_REGISTRY/$CI_COMMIT_BRANCH/$CI_PROJECT_NAME:$CI_COMMIT_BRANCH-latest; docker-compose -f docker-compose.yaml up -d"
+
+start-application-no4:
+  extends: .only_branch
+  stage: start-application-no2-4
+  needs: [start-application-no1]
+  before_script:
+    - HOST="HOST_BACK_${CI_COMMIT_BRANCH}4"
+    - HOST_SSH="${!HOST}"
+  script:
+    - ssh transferencias-dev@$HOST_SSH "rm -rf $CI_PROJECT_NAME && git clone git@url-repositorio/$CI_PROJECT_NAME.git --branch $CI_COMMIT_BRANCH --single-branch && cd ~/$CI_PROJECT_NAME && sed -i \"s/&BRANCH/$CI_COMMIT_BRANCH/g\" build_aplicacao/Dockerfile && sed -i \"s/&PROJECT_NAME/$CI_PROJECT_NAME/g\" build_aplicacao/docker-compose.yaml && sed -i \"s/&BRANCH/$CI_COMMIT_BRANCH/g\" build_aplicacao/docker-compose.yaml && sed -i \"s/&CONTAINER/$CONTAINER/g\" build_aplicacao/docker-compose.yaml && cd ./build_aplicacao && docker login -u $DOCKER_REGISTRY_USER -p $DOCKER_REGISTRY_PASSWD $DOCKER_REGISTRY && docker container rm -f $CONTAINER; docker image rm $DOCKER_REGISTRY/$CI_COMMIT_BRANCH/$CI_PROJECT_NAME:$CI_COMMIT_BRANCH-latest; docker-compose -f docker-compose.yaml up -d"
+
+start-application-aws-no5:
+  stage: start-application-no2-4
+  needs: [start-application-no1]
+  before_script:
+    - HOST="HOST_BACK_${CI_COMMIT_BRANCH}5"
+    - HOST_SSH="${!HOST}"
+  script:
+    - ssh transferencias-dev@$HOST_SSH "rm -rf $CI_PROJECT_NAME && git clone git@url-repositorio/$CI_PROJECT_NAME.git --branch $CI_COMMIT_BRANCH --single-branch && cd ~/$CI_PROJECT_NAME && sed -i \"s/&BRANCH/$CI_COMMIT_BRANCH/g\" build_aplicacao/Dockerfile && sed -i \"s/&PROJECT_NAME/$CI_PROJECT_NAME/g\" build_aplicacao/docker-compose.yaml && sed -i \"s/&BRANCH/$CI_COMMIT_BRANCH/g\" build_aplicacao/docker-compose.yaml && sed -i \"s/&CONTAINER/$CONTAINER/g\" build_aplicacao/docker-compose.yaml && cd ./build_aplicacao && docker login -u $DOCKER_REGISTRY_USER -p $DOCKER_REGISTRY_PASSWD $DOCKER_REGISTRY && docker container rm -f $CONTAINER; docker image rm $DOCKER_REGISTRY/$CI_COMMIT_BRANCH/$CI_PROJECT_NAME:$CI_COMMIT_BRANCH-latest; docker-compose -f docker-compose.yaml up -d"
+  allow_failure: true
+  only:
+    - desenvovimento
+  tags:
+    - runner-64-46-shell

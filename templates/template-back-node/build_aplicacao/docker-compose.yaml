@@ -1,0 +1,10 @@
+version: "3.3"
+
+services:
+  &CONTAINER:
+    image: repository.defensoria.mg.def.br/docker-dpmg/&BRANCH/&PROJECT_NAME:&BRANCH-latest
+    hostname: &CONTAINER
+    container_name: &CONTAINER
+    ports:
+      - "|??|:|??|" ## - Configurar |??|
+    restart: always

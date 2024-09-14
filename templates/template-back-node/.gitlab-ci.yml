@@ -1,0 +1,49 @@
+variables:
+  CONTAINER: "#Nome do container"
+
+stages:
+  - Validacao-Pipeline
+  - sonarqube-check
+  - tag-version
+  - build-and-push-image-docker
+  - tagging-new-latest
+  - clearing-docker-images
+  - start-application-no1
+  - start-application-no2-4
+  - merge-request
+
+.only_branch:
+  only:
+    - desenvolvimento
+    - homologacao
+    - producao
+  tags:
+    - runner-64-46-shell
+
+#===============================================================#
+#================ INSTANCIAR OS OUTROS JOBS ====================#
+#===============================================================#
+include:
+#======================= VALIDAÇÃO DO MERGE ====================#
+  - local: "/gitlab-ci/validacao-pipe.yml"
+#========================== SonarQube ==========================#
+  - local: "/gitlab-ci/sonarqube-check.yml"
+#========================= TAG-VERSION =========================#
+  # - local: "/gitlab-ci/tag-versionamento-job.yml"
+#========================== MIGRATION ==========================#
+  # - local: "/gitlab-ci/migration.yml" -> Liberar se o projeto possuir migration
+#======================== BUILD IMAGE ==========================#
+  - local: "/gitlab-ci/build-image.yml"
+#========================== DEPLOY =============================#
+  - local: "/gitlab-ci/start-application.yml"
+#========================== MERGE REQUEST ======================#
+  - local: "/gitlab-ci/merge-request-job.yml"
+#===================== DEPLOY FORNECEDOR =======================#
+  - local: "/gitlab-ci/pipeline-stefanini.yml"
+
+#===============================================================#
+#========================== SonarQube ==========================#
+#===============================================================#
+sonarqube-check:
+  extends: .sonnar
+  # allow_failure: true
