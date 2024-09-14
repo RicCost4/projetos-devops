@@ -1,0 +1,23 @@
+include:
+#======================== PERMISSÃO APP ========================#
+  - local: "/gitlab-ci/permission-app-job.yml"
+#======================== PERMISSÃO DEV ========================#
+  - local: "/gitlab-ci/permission-dev-job.yml"
+
+#===============================================================#
+#======================== MIGRATION ============================#
+#===============================================================#
+flyway-validate-and-fix-job:
+  stage: flyway-validate-and-fix
+  needs: [Sonarqube-check]
+  script:
+    - "#Comando de rodar a migration"
+  only:
+    refs:
+      - desenvolvimento
+      - homologacao
+      - producao
+    changes:
+      - migration/**/*
+  tags:
+    - runner-64-177-docker-m2

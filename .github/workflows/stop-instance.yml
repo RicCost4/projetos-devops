@@ -1,0 +1,20 @@
+name: Stop Instance
+
+on:
+  workflow_run:
+    workflows: ["Deploy Instances"]
+    types:
+      - completed
+
+jobs:
+  stop-instance-1:
+    if: github.event.workflow_run.conclusion == 'failure' && github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v3
+
+      - name: Stop Instance
+        run: |
+          echo "Stop job..."
+    continue-on-error: true

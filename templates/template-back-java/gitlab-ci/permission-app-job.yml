@@ -1,0 +1,68 @@
+.permission-app:
+  stage: permission-migration
+  needs: [flyway-validate-and-fix-job]
+  image: postgres:15.4
+  variables:
+    POSTGRES_DB: postgres
+    POSTGRES_USER: postgres
+    POSTGRES_HOST_AUTH_METHOD: trust
+  script:
+    - export PGPASSFILE='/root/.pgpass' && echo "$PG_PASS" >> /root/.pgpass && chmod 0600 /root/.pgpass
+    - psql --host $HOST --port $PORT --username $POSTGRES_USER -d $DATABASE -c "GRANT CONNECT ON DATABASE $DATABASE TO $U_APP;"
+    - psql --host $HOST --port $PORT --username $POSTGRES_USER -d $DATABASE -c "$GRANT"
+    - rm -rf /root/.pgpass
+  tags:
+    - runner-64-177-docker-m2
+
+#======================== DESENVOLVIMENTO ========================#
+permission-app-job-dev:
+  extends: .permission-app
+  variables:
+    HOST: $DB_HOST_DEV
+    PORT: '5060'
+    DATABASE: $DB_DEV
+  only:
+    refs:
+      - desenvolvimento
+    changes:
+      - migration/**/*
+
+#======================== AWS ========================#
+permission-app-job-aws:
+  extends: .permission-app
+  variables:
+    HOST: $DB_HOST_AWS
+    PORT: '5432'
+    DATABASE: $DB_DEV
+  allow_failure: true
+  only:
+    refs:
+      - desenvovimento
+    changes:
+      - migration/**/*
+
+#======================== HOMOLOGAÇÃO ========================#
+permission-app-job-hml:
+  extends: .permission-app
+  variables:
+    HOST: $DB_HOST_HML
+    PORT: '5432'
+    DATABASE: $DB_HML
+  only:
+    refs:
+      - homologacao
+    changes:
+      - migration/db/**/*
+
+#======================== PRODUÇÃO ========================#
+permission-app-job-prod:
+  extends: .permission-app
+  variables:
+    HOST: $DB_HOST_PROD
+    PORT: '5432'
+    DATABASE: $DB_PRE_PROD
+  only:
+    refs:
+      - producao
+    changes:
+      - migration/db/**/*

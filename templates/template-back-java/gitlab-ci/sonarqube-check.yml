@@ -1,0 +1,15 @@
+#===============================================================#
+#======================= STOP INSTANCE 1 =======================#
+#===============================================================#
+stop-Instance-1:
+  extends: .only_branch
+  stage: Stop-Instance-1
+  needs: [develop-01-Instance-1]
+  script:
+    - if [ $CI_COMMIT_BRANCH == "pre-prod" ]; then HOST="HOST_BACK_PRE1"; else HOST="HOST_BACK_${CI_COMMIT_BRANCH}1"; fi
+    - HOST_SSH="${!HOST}"
+    - if [ $CI_COMMIT_BRANCH == "pre-prod" ]; then CONTAINER="name_container_pre1"; else CONTAINER="name_container_${CI_COMMIT_BRANCH}_1"; fi
+    - ssh transferencias-dev@$HOST_SSH "docker stop $CONTAINER"
+  when: on_failure
+  tags:
+    - runner-64-46-shell

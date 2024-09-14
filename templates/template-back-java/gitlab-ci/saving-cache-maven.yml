@@ -1,0 +1,13 @@
+#===============================================================#
+#====================== SAVING-CACHE-MAVEN =====================#
+#===============================================================#
+Saving-Cache-Maven:
+  extends: .only_branch
+  stage: Saving-Cache-Maven
+  cache:
+    paths:
+      - /opt/repo-maven/.m2/repository
+  script:
+    - "#Comando de rodar o cache das aplicações"
+  tags:
+    - runner-64-177-docker-m2

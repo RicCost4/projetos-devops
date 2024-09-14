@@ -1,0 +1,20 @@
+#===============================================================#
+#================ SONARQUBE - CHECK CODE =======================#
+#===============================================================#
+Sonarqube-check:
+  extends: .only_branch
+  stage: Sonarqube-check
+  image: maven:3.6.3-openjdk-17
+  needs: [Saving-Cache-Maven]
+  variables:
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
+    GIT_DEPTH: "0"
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .sonar/cache
+  script:
+    - mvn verify $MAVEN_CLI_OPTS $MAVEN_OPTS sonar:sonar -U
+  # allow_failure: true
+  tags:
+    - runner-64-177-docker-m2

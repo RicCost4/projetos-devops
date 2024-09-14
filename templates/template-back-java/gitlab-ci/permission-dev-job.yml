@@ -1,0 +1,47 @@
+.permission-dev:
+  stage: permission-migration
+  needs: [flyway-validate-and-fix-job]
+  image: postgres:15.4
+  variables:
+    POSTGRES_DB: postgres
+    POSTGRES_USER: postgres
+    POSTGRES_HOST_AUTH_METHOD: trust
+  before_script:
+    - export PGPASSFILE='/root/.pgpass' && echo "$PG_PASS" >> /root/.pgpass && chmod 0600 /root/.pgpass
+  script:
+    - sed -i "5s/&BANCO/$DATABASE/g" gitlab-ci/script.sql
+    - sed -i "4s/&SCHEMA/$SCHEMA/g" gitlab-ci/script.sql
+    - sed -i "8s/&DEVS/$DEVS/g" gitlab-ci/script.sql
+    - psql --host $HOST --port $PORT --username $POSTGRES_USER -d $DATABASE -f gitlab-ci/script.sql
+  after_script:
+    - rm -rf /root/.pgpass
+    - rm -rf gitlab-ci/script.sql
+  tags:
+    - runner-64-177-docker-m2
+
+#======================== DESENVOLVIMENTO ========================#
+permission-app-job-dev:
+  extends: .permission-dev
+  variables:
+    HOST: $DB_HOST_DEV
+    PORT: '5060'
+    DATABASE: $DB_DEV
+  only:
+    refs:
+      - desenvolvimento
+    changes:
+      - migration/**/*
+
+#======================== AWS ========================#
+permission-app-job-aws:
+  extends: .permission-dev
+  variables:
+    HOST: $DB_HOST_AWS
+    PORT: '5432'
+    DATABASE: $DB_DEV
+  allow_failure: true
+  only:
+    refs:
+      - desenvovimento
+    changes:
+      - migration/**/*

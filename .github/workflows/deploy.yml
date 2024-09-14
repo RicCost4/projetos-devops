@@ -1,0 +1,29 @@
+name: Test Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  MY_GLOBAL_VAR: "global-value"
+
+jobs:
+  deploy-teste:
+    runs-on: ubuntu-latest
+    env:
+      MY_JOB: "job-value"
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v3
+
+      - name: Visualizar variaveis
+        run: echo "Variavel Global $MY_GLOBAL_VAR" ; echo "Variavel do job $MY_JOB"
+
+      - name: Visualizar Eventos 01
+        run: |
+          echo "Nome do repositorio: ${{ github.event.repository.name }} - Branch: ${{ github.ref_name }}-1  -f $CAMINHO_POM_XML_SERVICE"
+
+      - name: Visualizar o commit
+        run: |
+          echo "Autor do COMMIT :${{ github.event.head_commit.author.name }}, Mensagem do commit: ${{ github.event.head_commit.message }}"

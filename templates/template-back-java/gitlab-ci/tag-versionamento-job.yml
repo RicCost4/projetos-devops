@@ -1,0 +1,116 @@
+variables:
+  PRIVATE_TOKEN: "PRIVATE-TOKEN:$TOKEN"
+  COMPARACAO: "true"
+
+#===============================================================#
+#========================= TAG-VERSION =========================#
+#===============================================================#
+tag-versionamento-job:
+  stage: tag-version
+  image: ubuntu:latest
+  needs: [Sonarqube-check]
+  before_script:
+    - apt-get update && apt-get install -y curl jq
+  script:
+##########Comparação que ira fazer um regex no titulo do commit com base na branch que fez o merge##########
+    - |
+      if [[ "$CI_COMMIT_TITLE" =~ (HOTFIX/|hotfix/) ]]; then
+        echo "{$CI_COMMIT_TITLE}, branch não sera versionado, versionamento a mão se necessario."
+        exit 0
+      elif [[ "$CI_COMMIT_TITLE" =~ (ARQ/|FEA/|FIX/|arq/|fea/|fix/) ]]; then
+      ##########VARIAVEIS##########
+      ##########Variavel o nome que diferencia o versionamento do projeto, exem: ARQ/, FEA/, FIX/.##########
+        REFERENCIA="$(echo "${BASH_REMATCH[1]}" | tr '[:lower:]' '[:upper:]')"
+      ##########REGEX para extrair do titulo do merge o nome da branch##########
+        BRANCH=${CI_COMMIT_TITLE#*"'"}
+        BRANCH=${BRANCH%"'"*}
+      ##########Captura o retorno de ate 100 resposta de tag's em json organizada por maior p/ menor.##########
+        RESPONSE_DEV=$(curl -# --request GET -H $PRIVATE_TOKEN "$BASE_URL/$CI_PROJECT_ID/repository/tags?order_by=version&sort=desc&pagination=keyset&per_page=100")
+      ##########Obtem da resposta o total de ocorrencia##########
+        COUNT_TAG=$(echo "$RESPONSE_DEV" | jq length)
+      ##########Armazena em uma variavel o retorno do curl a requisição que obtem o id da consulta do arquivo da versão de 'desenvolvimento' e com esse id, faz a requisição ao conteudo deste arquivo##########
+        ID_FILE_DEV=$(curl -# --request GET -H $PRIVATE_TOKEN "$BASE_URL/$CI_PROJECT_ID/repository/tree?ref=desenvolvimento&pagination=keyset&per_page=100" | jq -r '.[] | select(.name == "pom.xml") | .id')
+        FILE_CONTENT_DEV=$(curl -# --request GET -H $PRIVATE_TOKEN "$BASE_URL/$CI_PROJECT_ID/repository/blobs/$ID_FILE_DEV/raw")
+      ##########Armazena na variavel o regex que obtem do  arquivo a versão presente##########
+        VERSION_DEV=$(echo "$FILE_CONTENT_DEV" | grep -oP '<version>\K[0-9.]+' | head -n 1)
+      ##########Pecorre a ocorrecia armazenando atualmente os dados neste for##########
+        VERSAO_FIRST=$VERSION_DEV
+        ACIONADOR="true"
+        if [[ $COUNT_TAG -gt 0 ]]; then
+          VERSAO_FIRST=$(echo "$RESPONSE_DEV" | jq -r '.[0].name' | grep -oP '([0-9.]+)')
+          for ((i=0; i<$COUNT_TAG; i++)); do
+            VERSAO=$(echo "$RESPONSE_DEV" | jq -r --argjson i "$i" '.[$i].name' | grep -oP '([0-9.]+)')
+            MESSAGE=$(echo "$RESPONSE_DEV" | jq -r --argjson i "$i" '.[$i].commit.message')
+            MESSAGE=${MESSAGE#*"'"}
+            MESSAGE=${MESSAGE%"'"*}
+            if [[ "$BRANCH" == "$MESSAGE" ]]; then
+              ACIONADOR="false"
+              break
+            fi
+          done
+        fi
+        ##########Realizar a tag do projeto##########
+        if [ "$ACIONADOR" = "$COMPARACAO" ]; then
+          POS_ATUAL1=$(echo "$VERSAO_FIRST" | cut -d. -f1)
+          POS_ATUAL2=$(echo "$VERSAO_FIRST" | cut -d. -f2)
+          POS_ATUAL3=$(echo "$VERSAO_FIRST" | cut -d. -f3)
+          MENSAGEM=$(echo $BRANCH)
+        ##########Switche##########
+        ##########Validar a linha que se encontrar a tag <version>??</version> no pom.xml na linha sed -i "?s|##########
+          case "$REFERENCIA" in
+          "ARQ/")
+            echo "$REFERENCIA"
+            INCREMENTO=$(expr $POS_ATUAL1 + 1)
+            NEW_VERSAO="${INCREMENTO}.0.0"
+            sed -i "9s|<version>.*</version>|<version>$NEW_VERSAO</version>|g" pom.xml
+            SOME_CONTENT=$(cat pom.xml)
+            TAG_NAME="v$NEW_VERSAO"
+            echo "Identificado nova versão, Versionar projeto: $VERSAO_FIRST para $NEW_VERSAO"
+            curl -# --request POST -H $PRIVATE_TOKEN "$BASE_URL/$CI_PROJECT_ID/repository/tags?tag_name=$TAG_NAME&ref=desenvolvimento&message=$MENSAGEM"
+            curl -# --request PUT -H $PRIVATE_TOKEN --data "branch=desenvolvimento&author_email=$EMAIL_USER&author_name=$USER_NAME&content=$SOME_CONTENT&commit_message=Versionamento do projeto: $NEW_VERSAO" "$BASE_URL/$CI_PROJECT_ID/repository/files/pom%2Exml"
+            exit 1
+          ;;
+          "FEA/")
+            echo "$REFERENCIA"
+            INCREMENTO=$(expr $POS_ATUAL2 + 1)
+            NEW_VERSAO="$POS_ATUAL1.${INCREMENTO}.0"
+            sed -i "9s|<version>.*</version>|<version>$NEW_VERSAO</version>|g" pom.xml
+            SOME_CONTENT=$(cat pom.xml)
+            TAG_NAME="v$NEW_VERSAO"
+            echo "Identificado nova versão, Versionar projeto: $VERSAO_FIRST para $NEW_VERSAO"
+            curl -# --request POST -H $PRIVATE_TOKEN "$BASE_URL/$CI_PROJECT_ID/repository/tags?tag_name=$TAG_NAME&ref=desenvolvimento&message=$MENSAGEM"
+            curl -# --request PUT -H $PRIVATE_TOKEN --data "branch=desenvolvimento&author_email=$EMAIL_USER&author_name=$USER_NAME&content=$SOME_CONTENT&commit_message=Versionamento do projeto: $NEW_VERSAO" "$BASE_URL/$CI_PROJECT_ID/repository/files/pom%2Exml"
+            exit 1
+          ;;
+          "FIX/")
+            echo "$REFERENCIA"
+            INCREMENTO=$(expr $POS_ATUAL3 + 1)
+            NEW_VERSAO="$POS_ATUAL1.$POS_ATUAL2.${INCREMENTO}"
+            sed -i "9s|<version>.*</version>|<version>$NEW_VERSAO</version>|g" pom.xml
+            SOME_CONTENT=$(cat pom.xml)
+            TAG_NAME="v$NEW_VERSAO"
+            echo "Identificado nova versão, Versionar projeto: $VERSAO_FIRST para $NEW_VERSAO"
+            curl -# --request POST -H $PRIVATE_TOKEN "$BASE_URL/$CI_PROJECT_ID/repository/tags?tag_name=$TAG_NAME&ref=desenvolvimento&message=$MENSAGEM"
+            curl -# --request PUT -H $PRIVATE_TOKEN --data "branch=desenvolvimento&author_email=$EMAIL_USER&author_name=$USER_NAME&content=$SOME_CONTENT&commit_message=Versionamento do projeto: $NEW_VERSAO" "$BASE_URL/$CI_PROJECT_ID/repository/files/pom%2Exml"
+            exit 1
+          ;;
+          *)
+            echo "Inválido argumento $REFERENCIA"
+            exit 0
+          ;;
+          esac
+        else
+        ##########Realizar a comparação do versionamento##########
+          echo "Projeto ja versionado nesta branch..."
+          exit 0
+        fi
+      else
+        echo "Fora do padrão para versionamento {$CI_COMMIT_TITLE}"
+        exit 0
+      fi
+  rules:
+    - if: ($CI_COMMIT_BRANCH == "desenvolvimento" && $CI_PIPELINE_SOURCE == "push")
+      when: on_success
+    - when: never
+  tags:
+    - runner-64-177-docker-m2

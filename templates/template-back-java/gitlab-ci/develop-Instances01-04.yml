@@ -1,0 +1,55 @@
+.extends_instances:
+  only:
+    - desenvolvimento
+    - homologacao
+    - producao
+  tags:
+    - runner-64-177-docker-m2
+
+#===============================================================#
+#========================== DEPLOY =============================#
+#===============================================================#
+develop-01-Instance-1:
+  extends: .extends_instances
+  stage: Deploy-Instance-1
+  # needs: [flyway-validate-and-fix-job]
+  script:
+    - "#Comando de rodar o deploy"
+  when: on_success
+  tags:
+    - runner-64-177-docker-m2
+
+develop-02-Instance-2:
+  extends: .extends_instances
+  stage: Deploy-Instance-2-4
+  needs: [develop-01-Instance-1]
+  script:
+    - "#Comando de rodar o deploy"
+
+develop-03-Instance-3:
+  extends: .extends_instances
+  stage: Deploy-Instance-2-4
+  needs: [develop-01-Instance-1]
+  script:
+    - sleep 2
+    - "#Comando de rodar o deploy"
+
+develop-04-Instance-4:
+  extends: .extends_instances
+  stage: Deploy-Instance-2-4
+  needs: [develop-01-Instance-1]
+  script:
+    - sleep 4
+    - "#Comando de rodar o deploy"
+
+develop-05-Instance-5-aws:
+  stage: Deploy-Instance-2-4
+  needs: [develop-01-Instance-1]
+  script:
+    - sleep 4
+    - "#Comando de rodar o deploy"
+  only:
+    - dev
+  allow_failure: true
+  tags:
+    - runner-64-177-docker-m2

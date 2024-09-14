@@ -1,0 +1,43 @@
+name: Validação de Merge Request
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - main
+
+jobs:
+  validacao-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validar Merge Request
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            case "${{ github.event.pull_request.base.ref }}" in
+              "dev")
+                if [[ "${{ github.event.pull_request.head.ref }}" =~ ARQ/|FEA/|FIX/|arq/|fea/|fix/ || "${{ github.event.pull_request.head.ref }}" == "devops-richard" ]]; then
+                  echo "Merge Aprovado :)..."
+                  exit 0
+                else
+                  echo "Merge inválido."
+                  exit 1
+                fi
+              ;;
+              "main")
+                if [[ "${{ github.event.pull_request.head.ref }}" == "dev" || "${{ github.event.pull_request.head.ref }}" == "devops-richard" || "${{ github.event.pull_request.head.ref }}" =~ HOTFIX/|hotfix/ ]]; then
+                  echo "Merge Aprovado :)..."
+                  exit 0
+                else
+                  echo "Merge inválido."
+                  exit 1
+                fi
+              ;;
+              *)
+                echo "Merge inválido. Comunicar a equipe DevOps para suporte."
+                exit 1
+              ;;
+            esac
+          else
+            echo "Merge inválido. Comunicar a equipe DevOps para suporte."
+            exit 1
+          fi

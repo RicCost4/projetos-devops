@@ -1,0 +1,47 @@
+image:
+  name: "#Nome da imagem"
+
+variables:
+  MAVEN_CLI_OPTS: "-s /opt/repo-maven/maven-settings/settings.xml --batch-mode "
+  MAVEN_OPTS: " -Dmaven.repo.local=/opt/repo-maven/.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=info -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true -Dmaven.artifact.threads=50"
+  CAMINHO_POM_XML_SERVICE: "service/pom.xml"
+  CAMINHO_POM_XML_DEPENDENCIES: "dependencies/pom.xml"
+
+stages:
+  - Validacao-Pipeline
+  - Saving-Cache-Maven
+  - Sonarqube-check
+  - flyway-validate-and-fix
+  - permission-migration
+  - Deploy-Instance-1
+  - Stop-Instance-1
+  - Deploy-Instance-2-4
+  - merge-request
+
+#===============================================================#
+#========================= PADRÃO ONLY =========================#
+#===============================================================#
+.only_branch:
+  only:
+    - desenvolvimento
+    - homologacao
+    - producao
+
+#===============================================================#
+#================ INSTANCIAR OS OUTROS JOBS ====================#
+#===============================================================#
+include:
+#======================= VALIDAÇÃO DO MERGE ====================#
+  - local: "/gitlab-ci/validacao-pipe.yml"
+#===================== SAVING-CACHE-MAVEN ======================#
+  - local: "/gitlab-ci/saving-cache-maven.yml"
+#========================= SONARQUBE ===========================#
+  - local: "/gitlab-ci/sonarqube-check.yml"
+#======================== MIGRATION ============================#
+  - local: "/gitlab-ci/flyway-validate-and-fix-job.yml"
+#========================== DEPLOY =============================#
+  - local: "/gitlab-ci/develop01-04.yml"
+#====================== STOP INSTANCE 1 ========================#
+  - local: "/gitlab-ci/stop-Instance.yml"
+#========================== MERGE REQUEST ======================#
+  - local: "/gitlab-ci/merge-request-job.yml"
